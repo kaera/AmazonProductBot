@@ -2,6 +2,7 @@ const axios = require('axios');
 const express = require('express');
 const tokens = require('./tokens');
 const DbClient = require('./db-client');
+const provider = require('./src/providers/amazon');
 
 let db = new DbClient(tokens.db);
 
@@ -36,32 +37,31 @@ const PubSub = {
 	}
 };
 
-function requestUpdate() {
+async function requestUpdate() {
 	if (Object.values(PubSub.subscribers.update).length === 0) {
 		console.log('No subscribers registered. Halting the polling process.');
 		return;
 	}
 
-	const url = tokens.urlRefuge;
-	console.log('Sending request to', url);
+	console.log('Requesting the update');
 	clearTimeout(requestTimeoutId);
-	axios({
-		    method: 'post',
-		    url: url,
-		    data: tokens.dataRefuge
-		})
-		.then(function (response) {
-			const data = response.data.match(/globalAvailability = (.*?);/)[1];
-			PubSub.trigger('update', JSON.parse(data));
-			requestTimeoutId = setTimeout(requestUpdate, pollInterval);
-		})
-		.catch(function (error) {
-			console.log(error);
-			requestTimeoutId = setTimeout(requestUpdate, pollInterval);
-		});
+	const urls = [];
+	try {
+		const data = await provider.getData(urls);
+		PubSub.trigger('update', data);
+	} catch (error) {
+		console.log(error);
+	} finally {
+		requestTimeoutId = setTimeout(requestUpdate, pollInterval);
+	}
 }
 
-async function addDate(chatId, date) {
+/**
+ * Add a new item to observe.
+ * It can be an available date in a hotel
+ * or a product on Amazon
+ */
+async function addItem(chatId, date) {
 	await db.updateOrCreateDate(chatId, date);
 
 	console.log('Date', date, 'added for chat id', chatId);
@@ -76,10 +76,10 @@ async function addDate(chatId, date) {
 			dates.forEach(date => {
 				if (data[date] === undefined) {
 					invalidDates.push(date);
-					removeDate(chatId, date);
+					removeItem(chatId, date);
 				} else if (data[date] > 0) {
 					availableDates.push(date);
-					//removeDate(chatId, date);
+					//removeItem(chatId, date);
 				}
 			});
 			if (invalidDates.length) {
@@ -94,7 +94,10 @@ async function addDate(chatId, date) {
 	}
 }
 
-async function removeDate(chatId, date) {
+/**
+ * Stop observing the item
+ */
+async function removeItem(chatId, date) {
 	await db.removeDate(chatId, date);
 	const dates = await db.getUserDates(chatId);
 	if (dates.length === 0) {
@@ -104,7 +107,7 @@ async function removeDate(chatId, date) {
 }
 
 function handleStartPolling(chatId, date) {
-	addDate(chatId, date);
+	addItem(chatId, date);
 	requestUpdate();
 	return sendMessage(chatId, 'Starting polling availability for date ' + date);
 }
@@ -114,7 +117,7 @@ async function handleStopPolling(chatId, date) {
 	const dates = await db.getUserDates(chatId);
 	if (dates.includes(date)) {
 		message = 'Polling cancelled for date ' + date;
-		removeDate(chatId, date);
+		removeItem(chatId, date);
 	} else {
 		message = 'There were no polling processes for date ' + date;
 	}

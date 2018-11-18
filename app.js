@@ -146,12 +146,7 @@ app.post('/bot/' + tokens.webhookToken, (req, res) => {
 	const chatId = message.chat.id;
 	let handlerPromise;
 	if (message.text === '/start') {
-		handlerPromise = sendMessage(chatId, 'Hi. I\'m here to help you find available places in Refuge du Goûter.\n\n' +
-		'I can understand the following commands:\n' +
-		'	/status: List current polling processes.\n' +
-		'	poll [date]: Init polling for a date in format YYYY-MM-DD, e.g. poll 2018-07-10.\n' +
-		'	stop [date]: Stop polling for a date in format YYYY-MM-DD, e.g. stop 2018-07-10.\n' +
-		'	/clear: Stop all polling processes.');
+		handlerPromise = sendMessage(chatId, provider.getStartMessage());
 	} else if (message.text === '/status') {
 		handlerPromise = checkStatus(chatId);
 	} else if (message.text === '/clear') {

@@ -3,6 +3,17 @@ const parser = require('node-html-parser');
 
 const Amazon = {};
 
+Amazon.getStartMessage = function () {
+  return 'Hi. I\'m here to help you monitor the prices on Amazon.\n\n' +
+    'I can understand the following commands:\n' +
+    '	/status: List current polling processes.\n' +
+    '	poll [url] [price]: Init polling for a product with given price in EUR,\n' +
+    '		e.g. poll https://amazon.de/dp/0123456789 25.00\n' +
+    '	stop [url]: Stop polling for a product,\n' +
+    '		e.g. stop https://amazon.de/dp/0123456789\n' +
+    '	/clear: Stop all polling processes.';
+};
+
 /**
  * Returns current price of a product by a given url on Amazon
  */

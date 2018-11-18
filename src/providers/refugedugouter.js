@@ -2,6 +2,15 @@ const axios = require('axios');
 
 const RefugeDuGouter = {};
 
+RefugeDuGouter.getStartMessage = function () {
+  return 'Hi. I\'m here to help you find available places in Refuge du Goûter.\n\n' +
+    'I can understand the following commands:\n' +
+    '	/status: List current polling processes.\n' +
+    '	poll [date]: Init polling for a date in format YYYY-MM-DD, e.g. poll 2018-07-10.\n' +
+    '	stop [date]: Stop polling for a date in format YYYY-MM-DD, e.g. stop 2018-07-10.\n' +
+    '	/clear: Stop all polling processes.';
+};
+
 /**
  * Send a request to refugedugoute website
  * to fetch the list of available dates
@@ -13,7 +22,8 @@ RefugeDuGouter.getData = async function (url, data) {
     url: url,
     data: data
   });
-  return response.data.match(/globalAvailability = (.*?);/)[1];
+  const result = response.data.match(/globalAvailability = (.*?);/)[1];
+  return JSON.parse(result);
 };
 
 /**

@@ -91,8 +91,8 @@ async function removeItem(chatId, item) {
 	}
 }
 
-function handleStartPolling(chatId, item) {
-	addItem(chatId, item);
+async function handleStartPolling(chatId, item) {
+	await addItem(chatId, item);
 	requestUpdate();
 	return sendMessage(chatId, 'Starting polling availability for item ' + item);
 }

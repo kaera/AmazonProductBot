@@ -38,11 +38,21 @@ Amazon.runStopCommand = function (chatId, message, callbacks) {
  */
 async function fetchPrice (url) {
   console.log('Sending request to', url);
-  const response = await axios(url);
+  const response = await axios({
+    url: url,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebkit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36'
+    }
+  });
   console.log('Parsing the html for', url);
-  const rawPrice = parser.parse(response.data).querySelector('#buybox .offer-price').text;
-  console.log('Price fetched:', rawPrice);
-  const price = parseFloat(rawPrice.replace(/EUR /, '').replace(/,/, '.'));
+  const buyboxContent = parser.parse(response.data).querySelector('#buybox').text;
+  const rawPrice = buyboxContent.match(/EUR \d+,\d+/);
+  if (!rawPrice) {
+    console.log('No price found for', url);
+    return;
+  }
+  console.log('Price fetched:', rawPrice[0]);
+  const price = parseFloat(rawPrice[0].replace(/EUR /, '').replace(/,/, '.'));
   console.log('Price parsed:', price);
   return price;
 };
@@ -80,10 +90,10 @@ Amazon.handleUpdate = async function (chatId, items, data, callbacks) {
   console.log('Checking data for chat id:', chatId, 'items: ', items.join(', '));
   items.forEach(item => {
     const [url, price] = item.split('#');
-    if (data[url] === undefined) {
+    if (data[item] === undefined) {
       invalidItems.push(item);
       callbacks.removeItem(chatId, item);
-    } else if (data[url] < price) {
+    } else if (data[item] < price) {
       availableItems.push(item);
     }
   });

@@ -1,13 +1,13 @@
-# RoomAvailabilityBot
-### Setup instractions
+# AmazonProductBot
+### Setup instructions
 
 ```
-git clone https://github.com/kaera/RoomAvailabilityBot.git
-cd RoomAvailabilityBot
+git clone https://github.com/kaera/AmazonProductBot.git
+cd AmazonProductBot
 npm install && npm start
 
 ```
-### WebHook setup instractions
+### WebHook setup instructions
 
 ```
 https://api.telegram.org/bot{my_bot_token}/setWebhook?url={url_to_send_updates_to}/bot/{webhook_token}

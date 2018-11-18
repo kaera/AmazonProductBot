@@ -61,35 +61,18 @@ async function requestUpdate() {
  * It can be an available date in a hotel
  * or a product on Amazon
  */
-async function addItem(chatId, date) {
-	await db.updateOrCreateDate(chatId, date);
+async function addItem(chatId, item) {
+	await db.updateOrCreateDate(chatId, item);
 
-	console.log('Date', date, 'added for chat id', chatId);
+	console.log('Item', item, 'added for chat id', chatId);
 	if (!PubSub.isSubscribed('update', chatId)) {
 		console.log('Chat id', chatId, 'has subscribed for data updates');
 		PubSub.subscribe('update', chatId, async function(data) {
-			const dates = await db.getUserDates(chatId);
-
-			const invalidDates = [];
-			const availableDates = [];
-			console.log('Checking data for chat id:', chatId, 'dates: ', dates.join(', '));
-			dates.forEach(date => {
-				if (data[date] === undefined) {
-					invalidDates.push(date);
-					removeItem(chatId, date);
-				} else if (data[date] > 0) {
-					availableDates.push(date);
-					//removeItem(chatId, date);
-				}
+			const items = await db.getUserDates(chatId);
+			provider.handleUpdate(chatId, items, data, {
+			  sendMessage,
+			  removeItem
 			});
-			if (invalidDates.length) {
-				sendMessage(chatId, 'Unable to poll for date ' + invalidDates.join(', ') + ' as it\'s out of range');
-			}
-			if (availableDates.length) {
-				sendMessage(chatId, 'Places found for date ' + availableDates.join(', ') + '.\n\n' +
-					'You can book them here: http://refugedugouter.ffcam.fr/resapublic.html.');
-				console.log('Sending success message for chat id:', chatId, 'date:', availableDates.join(', '));
-			}
 		});
 	}
 }
@@ -97,38 +80,38 @@ async function addItem(chatId, date) {
 /**
  * Stop observing the item
  */
-async function removeItem(chatId, date) {
-	await db.removeDate(chatId, date);
-	const dates = await db.getUserDates(chatId);
-	if (dates.length === 0) {
+async function removeItem(chatId, item) {
+	await db.removeDate(chatId, item);
+	const items = await db.getUserDates(chatId);
+	if (items.length === 0) {
 		PubSub.unsubscribe('update', chatId);
 		console.log('Chat id', chatId, 'has unsubscribed from data updates');
 	}
 }
 
-function handleStartPolling(chatId, date) {
-	addItem(chatId, date);
+function handleStartPolling(chatId, item) {
+	addItem(chatId, item);
 	requestUpdate();
-	return sendMessage(chatId, 'Starting polling availability for date ' + date);
+	return sendMessage(chatId, 'Starting polling availability for item ' + item);
 }
 
-async function handleStopPolling(chatId, date) {
+async function handleStopPolling(chatId, item) {
 	let message;
-	const dates = await db.getUserDates(chatId);
-	if (dates.includes(date)) {
-		message = 'Polling cancelled for date ' + date;
-		removeItem(chatId, date);
+	const items = await db.getUserDates(chatId);
+	if (items.includes(item)) {
+		message = 'Polling cancelled for item ' + item;
+		removeItem(chatId, item);
 	} else {
-		message = 'There were no polling processes for date ' + date;
+		message = 'There were no polling processes for item ' + item;
 	}
 	return sendMessage(chatId, message);
 }
 
 async function handleClearCommand(chatId) {
-	const dates = await db.getUserDates(chatId);
+	const items = await db.getUserDates(chatId);
 	let message;
-	if (dates.length) {
-		message = 'Polling processes for dates ' + dates.sort().join(', ') + ' are stopped';
+	if (items.length) {
+		message = 'Polling processes for dates ' + items.sort().join(', ') + ' are stopped';
 		db.clearDates(chatId);
 	} else {
 		message = 'No processes to stop';
@@ -137,10 +120,10 @@ async function handleClearCommand(chatId) {
 }
 
 async function checkStatus(chatId) {
-	const dates = await db.getUserDates(chatId);
+	const items = await db.getUserDates(chatId);
 	let message;
-	if (dates.length) {
-		message = 'Polling processes are run for dates ' + dates.sort().join(', ');
+	if (items.length) {
+		message = 'Polling processes are run for dates ' + items.sort().join(', ');
 	} else {
 		message = 'No processes running';
 	}

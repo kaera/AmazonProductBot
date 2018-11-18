@@ -2,9 +2,12 @@ const axios = require('axios');
 
 const RefugeDuGouter = {};
 
-RefugeDuGouter.getStartMessage = function () {
-  return 'Hi. I\'m here to help you find available places in Refuge du Goûter.\n\n' +
-    'I can understand the following commands:\n' +
+RefugeDuGouter.getTitleMessage = function () {
+  return 'Hi. I\'m here to help you find available places in Refuge du Goûter.\n\n';
+};
+
+RefugeDuGouter.getHelpMessage = function () {
+  return 'I can understand the following commands:\n' +
     '	/status: List current polling processes.\n' +
     '	poll [date]: Init polling for a date in format YYYY-MM-DD, e.g. poll 2018-07-10.\n' +
     '	stop [date]: Stop polling for a date in format YYYY-MM-DD, e.g. stop 2018-07-10.\n' +

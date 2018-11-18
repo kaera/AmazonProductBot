@@ -50,7 +50,7 @@ class Client {
   async removeDate(chatId, date) {
     const connection = await this._getConnection();
     return this._getCollection(connection)
-      .updateOne({chatId: chatId}, {$pull: {dates: date}}, (err) => {
+      .updateOne({chatId: chatId}, {$pull: {dates: { $regex: date }}}, (err) => {
         if (err) {
           throw err;
         }
@@ -65,6 +65,17 @@ class Client {
 
     const chatData = await collection.findOne({ chatId: chatId });
     const dates = chatData ? chatData.dates : [];
+    await connection.close();
+    return dates;
+  }
+
+  async getAllDates() {
+    const connection = await this._getConnection();
+    const collection = this._getCollection(connection);
+
+    const data = await collection.find().limit(25).toArray();
+    const dates = [].concat(...data.map(_ => _.dates));
+    console.log('DataBase. Result:', dates);
     await connection.close();
     return dates;
   }

@@ -3,9 +3,12 @@ const parser = require('node-html-parser');
 
 const Amazon = {};
 
-Amazon.getStartMessage = function () {
-  return 'Hi. I\'m here to help you monitor the prices on Amazon.\n\n' +
-    'I can understand the following commands:\n' +
+Amazon.getTitleMessage = function () {
+  return 'Hi. I\'m here to help you monitor the prices on Amazon.\n\n';
+};
+
+Amazon.getHelpMessage = function () {
+  return 'I can understand the following commands:\n' +
     '	/status: List current polling processes.\n' +
     '	poll [url] [price]: Init polling for a product with given price in EUR,\n' +
     '		e.g. poll https://amazon.de/dp/0123456789 25.00\n' +
@@ -25,7 +28,7 @@ Amazon.runPollCommand = function (chatId, message, callbacks) {
 Amazon.runStopCommand = function (chatId, message, callbacks) {
   const params = message.text.match(/stop (https:\S+)/);
   return params ?
-    callbacks.handleStartPolling(chatId, params[1].replace(/#.*/, '')) :
+    callbacks.handleStopPolling(chatId, params[1].replace(/#.*/, '')) :
     callbacks.sendMessage(chatId, 'Couldn\'t parse the params. Please type the message in format "stop [url]",\n' +
     '		e.g. stop https://amazon.de/dp/0123456789');
 };
@@ -44,8 +47,10 @@ async function fetchPrice (url) {
   return price;
 };
 
-Amazon.getData = async function (urls) {
-  const prices = await Promise.all(urls.map(fetchPrice))
+Amazon.getData = async function (db) {
+  const urls = await db.getAllDates();
+  console.log(urls);
+  const prices = await Promise.all(urls.map(fetchPrice));
   const result = {};
   urls.forEach((url, i) => {
     result[url] = prices[i];
@@ -72,7 +77,7 @@ Amazon.getData = async function (urls) {
 Amazon.handleUpdate = async function (chatId, items, data, callbacks) {
   const invalidItems = [];
   const availableItems = [];
-  console.log('Checking data for chat id:', chatId, 'dates: ', items.join(', '));
+  console.log('Checking data for chat id:', chatId, 'items: ', items.join(', '));
   items.forEach(item => {
     const [url, price] = item.split('#');
     if (data[url] === undefined) {

@@ -45,9 +45,9 @@ async function requestUpdate() {
 
 	console.log('Requesting the update');
 	clearTimeout(requestTimeoutId);
-	const urls = [];
 	try {
-		const data = await provider.getData(urls);
+		// FIXME: db object shouldn't be passed to provider methods
+		const data = await provider.getData(db);
 		PubSub.trigger('update', data);
 	} catch (error) {
 		console.log(error);
@@ -125,7 +125,7 @@ async function checkStatus(chatId) {
 	const items = await db.getUserDates(chatId);
 	let message;
 	if (items.length) {
-		message = 'Polling processes are run for dates ' + items.sort().join(', ');
+		message = 'Polling processes are run for items ' + items.sort().join(', ');
 	} else {
 		message = 'No processes running';
 	}
@@ -148,7 +148,7 @@ app.post('/bot/' + tokens.webhookToken, (req, res) => {
 	const chatId = message.chat.id;
 	let handlerPromise;
 	if (message.text === '/start') {
-		handlerPromise = sendMessage(chatId, provider.getStartMessage());
+		handlerPromise = sendMessage(chatId, provider.getTitleMessage() + provider.getHelpMessage());
 	} else if (message.text === '/status') {
 		handlerPromise = checkStatus(chatId);
 	} else if (message.text === '/clear') {
@@ -164,9 +164,8 @@ app.post('/bot/' + tokens.webhookToken, (req, res) => {
 			sendMessage
 		});
 	} else {
-		console.log(message.text);
-		// TODO: Add separate greeting message for /start command
-		handlerPromise = sendMessage(chatId, provider.getStartMessage());
+		console.error('Unexpected request: ', message.text);
+		handlerPromise = sendMessage(chatId, provider.getHelpMessage());
 	}
     
 	handlerPromise

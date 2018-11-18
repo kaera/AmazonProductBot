@@ -11,6 +11,22 @@ RefugeDuGouter.getStartMessage = function () {
     '	/clear: Stop all polling processes.';
 };
 
+RefugeDuGouter.runPollCommand = function (chatId, message, callbacks) {
+  const date = message.text.match(/20\d\d-\d\d-\d\d/);
+  return date ?
+    callbacks.handleStartPolling(chatId, date[0]) :
+    callbacks.sendMessage(chatId, 'Couldn\'t parse the date. ' +
+      'Please enter the date in format YYYY-MM-DD, e.g. "poll 2018-07-10".');
+};
+
+RefugeDuGouter.runStopCommand = function (chatId, message, callbacks) {
+  const date = message.text.match(/20\d\d-\d\d-\d\d/);
+  return date ?
+    callbacks.handleStopPolling(chatId, date[0]) :
+    callbacks.sendMessage(chatId, 'Couldn\'t parse the date. ' +
+      'Please enter the date in format YYYY-MM-DD, e.g. "stop 2018-07-10".');
+};
+
 /**
  * Send a request to refugedugoute website
  * to fetch the list of available dates

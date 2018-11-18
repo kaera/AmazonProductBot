@@ -14,6 +14,22 @@ Amazon.getStartMessage = function () {
     '	/clear: Stop all polling processes.';
 };
 
+Amazon.runPollCommand = function (chatId, message, callbacks) {
+  const params = message.text.match(/poll (https:\S+) (\d+\S*)/);
+  return params ?
+    callbacks.handleStartPolling(chatId, [params[1].replace(/#.*/, ''), params[2]].join('#')) :
+    callbacks.sendMessage(chatId, 'Couldn\'t parse the params. Please type the message in format "poll [url] [price]",\n' +
+    '		e.g. poll https://amazon.de/dp/0123456789 25.00');
+};
+
+Amazon.runStopCommand = function (chatId, message, callbacks) {
+  const params = message.text.match(/stop (https:\S+)/);
+  return params ?
+    callbacks.handleStartPolling(chatId, params[1].replace(/#.*/, '')) :
+    callbacks.sendMessage(chatId, 'Couldn\'t parse the params. Please type the message in format "stop [url]",\n' +
+    '		e.g. stop https://amazon.de/dp/0123456789');
+};
+
 /**
  * Returns current price of a product by a given url on Amazon
  */

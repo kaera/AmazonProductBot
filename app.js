@@ -79,6 +79,8 @@ async function addItem(chatId, item) {
 
 /**
  * Stop observing the item
+ *
+ * TODO: handle the case when item doesn't completely match the db entry!
  */
 async function removeItem(chatId, item) {
 	await db.removeDate(chatId, item);
@@ -151,29 +153,20 @@ app.post('/bot/' + tokens.webhookToken, (req, res) => {
 		handlerPromise = checkStatus(chatId);
 	} else if (message.text === '/clear') {
 		handlerPromise = handleClearCommand(chatId);
-	} else if (message.text.match(/^\/?poll/i)) {
-		const date = message.text.match(/20\d\d-\d\d-\d\d/);
-		if (date) {
-			handlerPromise = handleStartPolling(chatId, date[0]);
-		} else {
-			handlerPromise = sendMessage(chatId, 'Couldn\'t parse the date. ' +
-				'Please enter the date in format YYYY-MM-DD, e.g. "poll 2018-07-10".');
-		}
-	} else if (message.text.match(/^\/?stop/i)) {
-		const date = message.text.match(/20\d\d-\d\d-\d\d/);
-		if (date) {
-			handlerPromise = handleStopPolling(chatId, date[0]);
-		} else {
-			handlerPromise = sendMessage(chatId, 'Couldn\'t parse the date. ' +
-				'Please enter the date in format YYYY-MM-DD, e.g. "stop 2018-07-10".');
-		}
+	} else if (message.text.match(/^\/?poll /i)) {
+		handlerPromise = provider.runPollCommand(chatId, message, {
+			handleStartPolling,
+			sendMessage
+		});
+	} else if (message.text.match(/^\/?stop /i)) {
+		handlerPromise = provider.runStopCommand(chatId, message, {
+			handleStopPolling,
+			sendMessage
+		});
 	} else {
 		console.log(message.text);
-		handlerPromise = sendMessage(chatId, 'I can understand the following commands:\n' +
-		'	/status: List current polling processes.\n' +
-		'	poll [date]: Init polling for a date in format YYYY-MM-DD, e.g. poll 2018-07-10.\n' +
-		'	stop [date]: Stop polling for a date in format YYYY-MM-DD, e.g. stop 2018-07-10.\n' +
-		'	/clear: Stop all polling processes.');
+		// TODO: Add separate greeting message for /start command
+		handlerPromise = sendMessage(chatId, provider.getStartMessage());
 	}
     
 	handlerPromise

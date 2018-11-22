@@ -37,29 +37,29 @@ Amazon.runStopCommand = function (chatId, message, callbacks) {
  * Returns current price of a product by a given url on Amazon
  */
 async function fetchPrice (url) {
-  console.log('Sending request to', url);
+  console.info('Sending request to', url);
   const response = await axios({
     url: url,
     headers: {
       'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebkit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36'
     }
   });
-  console.log('Parsing the html for', url);
+  console.info('Parsing the html for', url);
   const buyboxContent = parser.parse(response.data).querySelector('#buybox').text;
   const rawPrice = buyboxContent.match(/EUR \d+,\d+/);
   if (!rawPrice) {
-    console.log('No price found for', url);
+    console.error('No price found for', url);
     return;
   }
-  console.log('Price fetched:', rawPrice[0]);
+  console.info('Price fetched:', rawPrice[0]);
   const price = parseFloat(rawPrice[0].replace(/EUR /, '').replace(/,/, '.'));
-  console.log('Price parsed:', price);
+  console.info('Price parsed:', price);
   return price;
 };
 
 Amazon.getData = async function (db) {
   const urls = await db.getAllDates();
-  console.log(urls);
+  console.info(urls);
   const prices = await Promise.all(urls.map(fetchPrice));
   const result = {};
   urls.forEach((url, i) => {
@@ -75,19 +75,19 @@ Amazon.getData = async function (db) {
  * @param callbacks
  *
  * data format: {
- *   url1: price1,
- *   url2: price2
+ *   "url1#price1": price1,
+ *   "url2#price2": price2
  * }
  *
  * items format: [
- *   url1#price1,
- *   url2#price2
+ *   "url1#price1",
+ *   "url2#price2"
  * ]
  */
 Amazon.handleUpdate = async function (chatId, items, data, callbacks) {
   const invalidItems = [];
   const availableItems = [];
-  console.log('Checking data for chat id:', chatId, 'items: ', items.join(', '));
+  console.info('Checking data for chat id:', chatId, 'items: ', items.join(', '));
   items.forEach(item => {
     const [url, price] = item.split('#');
     if (data[item] === undefined) {
@@ -102,7 +102,7 @@ Amazon.handleUpdate = async function (chatId, items, data, callbacks) {
   }
   if (availableItems.length) {
     callbacks.sendMessage(chatId, 'Prices for items ' + availableItems.join(', ') + ' have dropped!');
-    console.log('Sending success message for chat id:', chatId, 'items:', availableItems.join(', '));
+    console.info('Sending success message for chat id:', chatId, 'items:', availableItems.join(', '));
   }
 };
 

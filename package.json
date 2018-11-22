@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha test src/**/*.spec.js --timeout 10000"
   },
   "author": "",
   "license": "ISC",
@@ -15,8 +15,10 @@
     "node-html-parser": "^1.1.11"
   },
   "devDependencies": {
+    "axios-mock-adapter": "^1.15.0",
     "mocha": "^5.2.0",
-    "nodemon": "^1.17.5"
+    "nodemon": "^1.17.5",
+    "sinon": "^7.1.1"
   },
   "repository": {
     "type": "git",
